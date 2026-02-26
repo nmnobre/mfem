@@ -23,7 +23,7 @@ if (MFEM_FETCH_METIS OR MFEM_FETCH_TPLS)
   set(METIS_FETCH_VERSION 4.0.3)
   add_library(METIS STATIC IMPORTED)
   # set options (technically flags because METIS does not use cmake)
-  set(METIS_FLAGS -Wno-incompatible-pointer-types)
+  set(METIS_FLAGS "-Wno-implicit-int -Wno-incompatible-pointer-types")
   string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE)
   set(METIS_FLAGS "${METIS_FLAGS} ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${BUILD_TYPE}}")
   if (BUILD_SHARED_LIBS)
@@ -40,7 +40,7 @@ if (MFEM_FETCH_METIS OR MFEM_FETCH_TPLS)
     UPDATE_DISCONNECTED TRUE
     PREFIX ${PREFIX}
     CONFIGURE_COMMAND tar -xzf ../metis/metis-${METIS_FETCH_VERSION}-mac.tgz --strip=1
-    BUILD_COMMAND $(MAKE) COPTIONS=${METIS_FLAGS}
+    BUILD_COMMAND $(MAKE) clean && $(MAKE) "OPTFLAGS=${METIS_FLAGS}"
     INSTALL_COMMAND mkdir -p ${PREFIX}/lib && cp libmetis.a ${PREFIX}/lib/)
   # set imported library target properties
   add_dependencies(METIS metis)
