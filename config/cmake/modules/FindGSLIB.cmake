@@ -27,7 +27,7 @@ if (MFEM_FETCH_GSLIB OR MFEM_FETCH_TPLS)
     set(GSLIB_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${BUILD_TYPE}}")
   endif()
   if (BUILD_SHARED_LIBS)
-    set(GSLIB_FLAGS "${GSLIB_C_FLAGS} -fPIC")
+    set(GSLIB_FLAGS "${GSLIB_FLAGS} -fPIC")
   endif()
   # define external project and create future include directory so it is present
   # to pass CMake checks at end of MFEM configuration step
