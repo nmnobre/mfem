@@ -2031,8 +2031,8 @@ void GridFunction::AccumulateAndCountBdrValues(
 {
    if (vcoeff)
    {
-      MFEM_VERIFY(fes->GetVDim() == vcoeff->GetVDim(),
-                  "vcoeff vdim != fes VDim");
+      MFEM_VERIFY(VectorDim() == vcoeff.GetVDim(),
+                  "vcoeff vdim != VectorDim()");
       MFEM_VERIFY(fes->GetTypicalBE()->GetMapType() == FiniteElement::VALUE &&
                   fes->GetTypicalBE()->GetRangeType() ==
                   FiniteElement::SCALAR,
