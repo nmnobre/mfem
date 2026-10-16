@@ -126,9 +126,7 @@ void AmgXSolver::InitSerial()
       AMGX_SAFE_CALL(AMGX_resources_create_simple(&rsrc, rsrc_cfg));
    }
 
-   CreateConfig(cfg);
-
-   AMGX_SAFE_CALL(AMGX_solver_create(&solver, rsrc, precision_mode, cfg));
+   AMGX_SAFE_CALL(AMGX_solver_create(&solver, rsrc, precision_mode, rsrc_cfg));
    AMGX_SAFE_CALL(AMGX_matrix_create(&AmgXA, rsrc, precision_mode));
    AMGX_SAFE_CALL(AMGX_vector_create(&AmgXP, rsrc, precision_mode));
    AMGX_SAFE_CALL(AMGX_vector_create(&AmgXRHS, rsrc, precision_mode));
@@ -307,7 +305,9 @@ void AmgXSolver::DefaultParameters(const AMGX_MODE amgxMode_,
 #ifdef MFEM_USE_MPI
 void AmgXSolver::InitAmgX()
 {
-   // Set up once
+   // Set up once. Create an AmgX resource object, only the first instance
+   // needs to create the resource object. Its configuration and communicator
+   // live as long as the resource object.
    if (count == 1)
    {
       AMGX_SAFE_CALL(AMGX_initialize());
@@ -321,18 +321,7 @@ void AmgXSolver::InitAmgX()
       {
          int irank; MPI_Comm_rank(MPI_COMM_WORLD, &irank);
          if (irank == 0) { mfem::out<<msg;} }));
-   }
 
-   CreateConfig(cfg);
-
-   // Let AmgX handle returned error codes internally
-   AMGX_SAFE_CALL(AMGX_config_add_parameters(&cfg, "exception_handling=1"));
-
-   // Create an AmgX resource object, only the first instance needs to create
-   // the resource object. Its configuration and communicator live as long as
-   // the resource object.
-   if (count == 1)
-   {
       MPI_Comm_dup(gpuWorld, &rsrc_comm);
       CreateConfig(rsrc_cfg);
       AMGX_SAFE_CALL(AMGX_config_add_parameters(&rsrc_cfg,
@@ -349,10 +338,10 @@ void AmgXSolver::InitAmgX()
    AMGX_SAFE_CALL(AMGX_matrix_create(&AmgXA, rsrc, precision_mode));
 
    // Create an AmgX solver object
-   AMGX_SAFE_CALL(AMGX_solver_create(&solver, rsrc, precision_mode, cfg));
+   AMGX_SAFE_CALL(AMGX_solver_create(&solver, rsrc, precision_mode, rsrc_cfg));
 
    // Obtain the default number of rings based on current configuration
-   AMGX_SAFE_CALL(AMGX_config_get_default_number_of_rings(cfg, &ring));
+   AMGX_SAFE_CALL(AMGX_config_get_default_number_of_rings(rsrc_cfg, &ring));
 }
 
 // Groups MPI ranks into teams and assigns the roots to talk to GPUs
@@ -690,7 +679,7 @@ void AmgXSolver::SetMatrixMPIGPUExclusive(const HypreParMatrix &A,
    if (update_mat == false)
    {
       AMGX_distribution_handle dist;
-      AMGX_SAFE_CALL(AMGX_distribution_create(&dist, cfg));
+      AMGX_SAFE_CALL(AMGX_distribution_create(&dist, rsrc_cfg));
       AMGX_SAFE_CALL(AMGX_distribution_set_partition_data(dist,
                                                           AMGX_DIST_PARTITION_OFFSETS,
                                                           rowPart.GetData()));
@@ -845,7 +834,7 @@ void AmgXSolver::SetMatrixMPITeams(const HypreParMatrix &A,
       if (update_mat == false)
       {
          AMGX_distribution_handle dist;
-         AMGX_SAFE_CALL(AMGX_distribution_create(&dist, cfg));
+         AMGX_SAFE_CALL(AMGX_distribution_create(&dist, rsrc_cfg));
          AMGX_SAFE_CALL(AMGX_distribution_set_partition_data(dist,
                                                              AMGX_DIST_PARTITION_OFFSETS,
                                                              rowPart.GetData()));
@@ -1037,17 +1026,12 @@ void AmgXSolver::Finalize()
       {
          AMGX_SAFE_CALL(AMGX_resources_destroy(rsrc));
          AMGX_SAFE_CALL(AMGX_config_destroy(rsrc_cfg));
-         AMGX_SAFE_CALL(AMGX_config_destroy(cfg));
 #ifdef MFEM_USE_MPI
          if (rsrc_comm != MPI_COMM_NULL) { MPI_Comm_free(&rsrc_comm); }
 #endif
 
          AMGX_SAFE_CALL(AMGX_finalize_plugins());
          AMGX_SAFE_CALL(AMGX_finalize());
-      }
-      else
-      {
-         AMGX_SAFE_CALL(AMGX_config_destroy(cfg));
       }
 #ifdef MFEM_USE_MPI
       // destroy gpuWorld

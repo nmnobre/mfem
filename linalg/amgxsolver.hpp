@@ -326,9 +326,6 @@ private:
    // Sets AmgX precision (currently on double is supported)
    AMGX_Mode               precision_mode = AMGX_mode_dDDI;
 
-   // AmgX config object.
-   AMGX_config_handle      cfg = nullptr;
-
    // AmgX matrix object.
    AMGX_matrix_handle      AmgXA = nullptr;
 
