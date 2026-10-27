@@ -349,6 +349,9 @@ public:
    /// Returns the Diagonal of A
    void GetDiag(Vector & d) const;
 
+   /// Return the diagonal of the matrix (Operator interface).
+   void AssembleDiagonal(Vector &diag) const override { GetDiag(diag); }
+
    /// Produces a DenseMatrix from a SparseMatrix
    DenseMatrix *ToDenseMatrix() const;
 
