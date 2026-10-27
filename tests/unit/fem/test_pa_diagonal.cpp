@@ -572,6 +572,8 @@ TEST_CASE("Hcurl nonlinear diagonal PA",
    class IdentityNLFIntegrator : public NonlinearFormIntegrator
    {
    public:
+      void AssembleElementGrad(const FiniteElement &el, ElementTransformation &,
+                               const Vector &, DenseMatrix &elmat) override { elmat.Diag(1., el.GetDof()); }
       using NonlinearFormIntegrator::AssemblePA;
       void AssemblePA(const FiniteElementSpace &) override { }
       void AssembleGradPA(const Vector &, const FiniteElementSpace &) override { }
@@ -600,7 +602,16 @@ TEST_CASE("Hcurl nonlinear diagonal PA",
 
    Vector diag_pa(fes.GetVSize());
    nlf_pa.GetGradient(Vector(fes.GetVSize())).AssembleDiagonal(diag_pa);
-   REQUIRE(diag_pa.Sum() == MFEM_Approx(8.));
+
+   NonlinearForm nlf_lg(&fes);
+   nlf_lg.SetAssemblyLevel(AssemblyLevel::LEGACY);
+   nlf_lg.AddDomainIntegrator(new IdentityNLFIntegrator);
+
+   Vector diag_lg(fes.GetVSize());
+   nlf_lg.GetGradient(Vector(fes.GetVSize())).AssembleDiagonal(diag_lg);
+
+   diag_lg -= diag_pa;
+   REQUIRE(diag_lg.Normlinf() == MFEM_Approx(0.));
 }
 
 } // namespace assemblediagonalpa
